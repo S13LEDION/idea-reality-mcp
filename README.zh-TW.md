@@ -13,6 +13,8 @@
 [![Smithery](https://smithery.ai/badge/idea-reality-mcp)](https://idea-reality-mcp--mnemox-ai.run.tools)
 [![GitHub stars](https://img.shields.io/github/stars/mnemox-ai/idea-reality-mcp)](https://github.com/mnemox-ai/idea-reality-mcp)
 
+**支援：** Claude Desktop · Claude Code · Cursor · Windsurf · 所有 MCP 客戶端
+
 <p align="center">
   <a href="https://mnemox.ai/check"><strong>👉 在瀏覽器直接試用 — 免安裝</strong></a>
 </p>
@@ -74,15 +76,9 @@ uvx idea-reality-mcp
 
 ## 安裝
 
-### Claude Code（CLI）— 最快
+### Claude Desktop
 
-```bash
-claude mcp add idea-reality -- uvx idea-reality-mcp
-```
-
-### Claude Desktop / Cursor
-
-貼入你的 MCP 設定檔（`claude_desktop_config.json` 或 `.cursor/mcp.json`）：
+加到你的 `claude_desktop_config.json`：
 
 ```json
 {
@@ -98,11 +94,42 @@ claude mcp add idea-reality -- uvx idea-reality-mcp
 <details>
 <summary>設定檔位置</summary>
 
-- **Claude Desktop (macOS):** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Claude Desktop (Windows):** `%APPDATA%\Claude\claude_desktop_config.json`
-- **Cursor:** 專案根目錄的 `.cursor/mcp.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 </details>
+
+重啟 Claude Desktop。你會在 🔨 工具選單看到 `idea_check`。試試問 Claude：
+
+- *「幫我查有沒有人做過健身追蹤的 MCP server」*
+- *「AI 發票解析工具有競品嗎？」*
+- *「開始之前先檢查：給小團隊用的開源 Slack 替代品」*
+
+### Claude Code
+
+```bash
+claude mcp add idea-reality -- uvx idea-reality-mcp
+```
+
+然後問 Claude：
+
+- *「查一下這個 idea 有沒有人做過：把 Figma 轉 React 的 CLI 工具」*
+- *「對 AI code review 工具跑一次深度現實檢查」*
+
+### Cursor / 其他 MCP 客戶端
+
+加到 `.cursor/mcp.json`（或你的 MCP 客戶端設定檔）：
+
+```json
+{
+  "mcpServers": {
+    "idea-reality": {
+      "command": "uvx",
+      "args": ["idea-reality-mcp"]
+    }
+  }
+}
+```
 
 ### Smithery（遠端）
 

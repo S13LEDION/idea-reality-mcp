@@ -14,6 +14,8 @@ The only MCP tool that searches 5 real databases before your agent writes a sing
 [![Smithery](https://smithery.ai/badge/idea-reality-mcp)](https://idea-reality-mcp--mnemox-ai.run.tools)
 [![GitHub stars](https://img.shields.io/github/stars/mnemox-ai/idea-reality-mcp)](https://github.com/mnemox-ai/idea-reality-mcp)
 
+**Works with:** Claude Desktop · Claude Code · Cursor · Windsurf · any MCP client
+
 <p align="center">
   <a href="https://mnemox.ai/check"><strong>👉 Try it in your browser — no install</strong></a>
 </p>
@@ -75,15 +77,9 @@ Or [try it in your browser](https://mnemox.ai/check) — no install, instant res
 
 ## Install
 
-### Claude Code (CLI) — fastest
+### Claude Desktop
 
-```bash
-claude mcp add idea-reality -- uvx idea-reality-mcp
-```
-
-### Claude Desktop / Cursor
-
-Paste into your MCP config (`claude_desktop_config.json` or `.cursor/mcp.json`):
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -97,13 +93,44 @@ Paste into your MCP config (`claude_desktop_config.json` or `.cursor/mcp.json`):
 ```
 
 <details>
-<summary>Config file locations</summary>
+<summary>Config file location</summary>
 
-- **Claude Desktop (macOS):** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Claude Desktop (Windows):** `%APPDATA%\Claude\claude_desktop_config.json`
-- **Cursor:** `.cursor/mcp.json` in project root
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 </details>
+
+Restart Claude Desktop. You'll see `idea_check` in the 🔨 tools menu. Try asking:
+
+- *"Check if someone has already built a fitness tracking MCP server"*
+- *"Is there competition for an AI-powered invoice parser?"*
+- *"Before I start, run a reality check on: open-source Slack alternative for small teams"*
+
+### Claude Code
+
+```bash
+claude mcp add idea-reality -- uvx idea-reality-mcp
+```
+
+Then ask Claude:
+
+- *"Check if this idea already exists: CLI tool that converts Figma to React"*
+- *"Run a deep reality check on AI-powered code review tools"*
+
+### Cursor / Other MCP Clients
+
+Add to `.cursor/mcp.json` (or your client's MCP config):
+
+```json
+{
+  "mcpServers": {
+    "idea-reality": {
+      "command": "uvx",
+      "args": ["idea-reality-mcp"]
+    }
+  }
+}
+```
 
 ### Smithery (Remote)
 
@@ -265,16 +292,16 @@ If the tool missed obvious competitors or returned irrelevant results:
 ## FAQ
 
 **How is this different from just Googling?**
-Google requires you to manually search and interpret results. idea-reality-mcp runs automatically inside your AI coding agent — no human intent needed. It searches 5 structured databases (not web pages) and returns a scored 0-100 signal with evidence.
+Google requires you to manually search. idea-reality-mcp runs automatically inside your AI agent — no human intent needed. It searches 5 structured databases, not web pages, and returns a scored signal instead of links.
 
 **What databases does it scan?**
-GitHub repositories, Hacker News posts, npm packages, PyPI packages, and Product Hunt launches. Quick mode scans GitHub + HN. Deep mode scans all five in parallel.
+GitHub repositories, Hacker News posts, npm packages, PyPI packages, and Product Hunt launches. Quick mode scans GitHub + HN. Deep mode scans all five.
 
 **Is it free?**
-Yes. MIT license, fully open source. The MCP server runs locally. The web demo at [mnemox.ai/check](https://mnemox.ai/check) and the REST API are also free.
+Yes. MIT license, open source. The MCP server runs locally. The web demo at mnemox.ai/check is also free.
 
 **Does it work for non-English ideas?**
-Yes. The keyword extraction supports Chinese (150+ term mappings) and works with any language input. The cloud API uses LLM extraction (Claude Haiku) for better multilingual support.
+Yes. The keyword extraction supports Chinese (150+ term mappings) and works with any language input. The Render API uses LLM extraction for better multilingual support.
 
 **How does the 0-100 scoring work?**
 The reality signal combines weighted scores from each source — repository count, star count, discussion volume, package downloads. Higher means more existing competition. The formula is intentionally simple and explainable, not ML-based.
