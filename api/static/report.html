@@ -456,19 +456,12 @@
     btnCheck.disabled = true;
 
     try {
-      // Fire both requests in parallel
-      const [checkRes, previewRes] = await Promise.all([
-        fetch(API + '/api/check', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ idea_text: text, depth }),
-        }),
-        fetch(API + '/api/report/preview', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ idea_text: text, depth }),
-        }),
-      ]);
+      // Single API call — preview cards built client-side from check result
+      const checkRes = await fetch(API + '/api/check', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ idea_text: text, depth }),
+      });
 
       if (!checkRes.ok) {
         const err = await checkRes.json().catch(() => ({}));
@@ -476,15 +469,14 @@
       }
 
       const checkData = await checkRes.json();
-      const previewData = previewRes.ok ? await previewRes.json() : {};
 
       currentIdeaHash = checkData.idea_hash || '';
 
       // Render free result
       renderFreeResult(checkData);
 
-      // Render blurred preview
-      buildPreviewCards(previewData, checkData);
+      // Render blurred preview from check result (no extra API call)
+      buildPreviewCards(checkData, checkData);
 
       hide($('#loading'));
       show($('#free-result'));

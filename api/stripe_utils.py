@@ -55,7 +55,7 @@ def create_checkout_session(
             "idea_hash": idea_hash,
             "language": language,
         },
-        customer_email_collection="required",
+        # Stripe Checkout in payment mode collects email by default
         success_url=success_url,
         cancel_url=cancel_url,
     )
@@ -79,7 +79,7 @@ def verify_webhook(payload: bytes, sig_header: str) -> stripe.Event:
 def get_session_status(session_id: str) -> dict:
     """Retrieve Stripe checkout session status.
 
-    Returns dict with payment_status and status.
+    Returns dict with payment_status, status, and metadata for report regeneration.
     """
     secret_key = _get_stripe_key()
     if not secret_key:
@@ -89,4 +89,10 @@ def get_session_status(session_id: str) -> dict:
     return {
         "payment_status": session.payment_status,
         "status": session.status,
+        "metadata": dict(session.metadata) if session.metadata else {},
+        "buyer_email": (
+            session.customer_details.email
+            if session.customer_details
+            else None
+        ),
     }

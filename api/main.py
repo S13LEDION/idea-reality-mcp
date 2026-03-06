@@ -955,7 +955,11 @@ async def stripe_webhook(request: Request):
 
 @app.get("/api/checkout-status")
 async def checkout_status(session_id: str):
-    """Check Stripe checkout session status and return report_id if available."""
+    """Check Stripe checkout session status and return report_id if available.
+
+    If payment is confirmed but the report is missing from DB (e.g. after
+    Render redeploy), the report is regenerated from Stripe session metadata.
+    """
     if not stripe_utils._get_stripe_key():
         raise HTTPException(status_code=503, detail="Stripe is not configured")
 
@@ -974,6 +978,52 @@ async def checkout_status(session_id: str):
         report = score_db.get_report_by_stripe_session(session_id)
         if report:
             result["report_id"] = report["report_id"]
+        else:
+            # Report missing (Render redeploy wiped SQLite) — regenerate
+            metadata = status.get("metadata", {})
+            idea_text = metadata.get("idea_text", "")
+            if idea_text:
+                try:
+                    language = metadata.get("language", "en")
+                    idea_hash_val = metadata.get("idea_hash") or score_db.idea_hash(idea_text)
+                    buyer_email = status.get("buyer_email")
+
+                    keywords = extract_keywords(idea_text)
+                    github_results, hn_results = await asyncio.gather(
+                        search_github_repos(keywords),
+                        search_hn(keywords),
+                    )
+                    signal_result = compute_signal(
+                        idea_text=idea_text,
+                        keywords=keywords,
+                        github_results=github_results,
+                        hn_results=hn_results,
+                        depth="quick",
+                    )
+                    full_report = await report_mod.generate_report(
+                        idea_text=idea_text,
+                        signal_result=signal_result,
+                        language=language,
+                    )
+                    report_data = {**signal_result, "report": full_report}
+                    report_id = str(uuid.uuid4())
+                    score_db.save_report(
+                        report_id=report_id,
+                        idea_text=idea_text,
+                        idea_hash=idea_hash_val,
+                        score=signal_result["reality_signal"],
+                        report_data=json.dumps(report_data),
+                        language=language,
+                        stripe_session_id=session_id,
+                        buyer_email=buyer_email,
+                    )
+                    result["report_id"] = report_id
+                    logger.info(
+                        "[STRIPE] Report regenerated after DB loss: report_id=%s",
+                        report_id,
+                    )
+                except Exception:
+                    logger.exception("[STRIPE] Failed to regenerate report for session %s", session_id)
 
     return result
 
