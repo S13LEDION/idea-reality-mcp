@@ -947,22 +947,79 @@ async def lemon_webhook(request: Request):
     return {"received": True}
 
 
-@app.get("/api/checkout-status")
-async def checkout_status(order_id: str = "", session_id: str = "", idea_hash: str = ""):
-    """Check payment status and return report_id.
+async def _generate_report_on_the_fly(
+    idea_text: str,
+    idea_hash_val: str,
+    language: str = "en",
+    order_id: str = "",
+    buyer_email: str = "",
+) -> dict:
+    """Generate a paid report from scratch and save to DB.
 
-    Accepts order_id (LemonSqueezy), session_id (legacy), or idea_hash.
-    Looks up the report in DB. If not found but order_id is provided,
-    tries to fetch from LemonSqueezy API and regenerate the report.
+    Returns {"payment_status": "paid", "status": "complete", "report_id": ...}.
+    Raises on failure.
+    """
+    keywords = extract_keywords(idea_text)
+    github_results, hn_results = await asyncio.gather(
+        search_github_repos(keywords),
+        search_hn(keywords),
+    )
+    signal_result = compute_signal(
+        idea_text=idea_text,
+        keywords=keywords,
+        github_results=github_results,
+        hn_results=hn_results,
+        depth="quick",
+    )
+    full_report = await report_mod.generate_report(
+        idea_text=idea_text,
+        signal_result=signal_result,
+        language=language,
+    )
+    report_data = {**signal_result, "report": full_report}
+    report_id = str(uuid.uuid4())
+    score_db.save_report(
+        report_id=report_id,
+        idea_text=idea_text,
+        idea_hash=idea_hash_val or score_db.idea_hash(idea_text),
+        score=signal_result["reality_signal"],
+        report_data=json.dumps(report_data),
+        language=language,
+        stripe_session_id=order_id or None,
+        buyer_email=buyer_email or None,
+    )
+    logger.info("[CHECKOUT] Report generated on-the-fly: report_id=%s", report_id)
+    return {
+        "payment_status": "paid",
+        "status": "complete",
+        "report_id": report_id,
+    }
+
+
+async def _checkout_status_logic(
+    order_id: str = "",
+    session_id: str = "",
+    idea_hash: str = "",
+    idea_text: str = "",
+) -> dict:
+    """Shared logic for GET and POST checkout-status.
+
+    Lookup order:
+      1. Find report by order_id → return if found
+      2. Find report by idea_hash → return if found
+      3. If idea_text provided and idea_hash matches → generate on-the-fly
+      4. Try LemonSqueezy API (if order_id) → generate from custom_data
+      5. Return pending
     """
     lookup_id = order_id or session_id
     if not lookup_id and not idea_hash:
         raise HTTPException(status_code=422, detail="order_id, session_id, or idea_hash required")
 
-    # Look up in DB first — by order ID or idea_hash
+    # 1. Look up in DB by order ID
     report = None
     if lookup_id:
         report = score_db.get_report_by_stripe_session(lookup_id)
+    # 2. Look up by idea_hash
     if not report and idea_hash:
         report = score_db.get_report_by_idea_hash(idea_hash)
     if report:
@@ -972,60 +1029,83 @@ async def checkout_status(order_id: str = "", session_id: str = "", idea_hash: s
             "report_id": report["report_id"],
         }
 
-    # Not in DB — try LemonSqueezy API to verify + regenerate
+    # 3. Self-healing: if frontend provided idea_text, generate on-the-fly
+    if idea_text and idea_text.strip() and idea_hash:
+        # Verify idea_hash matches idea_text (prevents abuse)
+        computed_hash = score_db.idea_hash(idea_text.strip())
+        if computed_hash == idea_hash:
+            try:
+                return await _generate_report_on_the_fly(
+                    idea_text=idea_text.strip(),
+                    idea_hash_val=idea_hash,
+                )
+            except Exception:
+                logger.exception("[CHECKOUT] On-the-fly generation failed for idea_hash=%s", idea_hash[:16])
+
+    # 4. Not in DB — try LemonSqueezy API to verify + regenerate
     if order_id and lemon_utils._get_api_key():
         try:
             order_attrs = await lemon_utils.get_order(order_id)
             if order_attrs.get("status") == "paid":
-                # Extract custom data — stored in first_order_item or metadata
                 custom = order_attrs.get("first_order_item", {}).get("custom_data", {})
                 if not custom:
-                    # Try urls.receipt as fallback indicator
                     custom = {}
-                idea_text = custom.get("idea_text", "")
+                lemon_idea_text = custom.get("idea_text", "")
                 language = custom.get("language", "en")
                 idea_hash_val = custom.get("idea_hash", "")
 
-                if idea_text:
-                    keywords = extract_keywords(idea_text)
-                    github_results, hn_results = await asyncio.gather(
-                        search_github_repos(keywords),
-                        search_hn(keywords),
-                    )
-                    signal_result = compute_signal(
-                        idea_text=idea_text,
-                        keywords=keywords,
-                        github_results=github_results,
-                        hn_results=hn_results,
-                        depth="quick",
-                    )
-                    full_report = await report_mod.generate_report(
-                        idea_text=idea_text,
-                        signal_result=signal_result,
-                        language=language,
-                    )
-                    report_data = {**signal_result, "report": full_report}
-                    report_id = str(uuid.uuid4())
-                    score_db.save_report(
-                        report_id=report_id,
-                        idea_text=idea_text,
-                        idea_hash=idea_hash_val or score_db.idea_hash(idea_text),
-                        score=signal_result["reality_signal"],
-                        report_data=json.dumps(report_data),
-                        language=language,
-                        stripe_session_id=order_id,
-                        buyer_email=order_attrs.get("user_email", ""),
-                    )
-                    logger.info("[LEMON] Report regenerated: report_id=%s", report_id)
-                    return {
-                        "payment_status": "paid",
-                        "status": "complete",
-                        "report_id": report_id,
-                    }
+                if lemon_idea_text:
+                    try:
+                        return await _generate_report_on_the_fly(
+                            idea_text=lemon_idea_text,
+                            idea_hash_val=idea_hash_val,
+                            language=language,
+                            order_id=order_id,
+                            buyer_email=order_attrs.get("user_email", ""),
+                        )
+                    except Exception:
+                        logger.exception("[LEMON] Report generation failed for order %s", order_id)
         except Exception:
             logger.exception("[LEMON] Failed to verify/regenerate order %s", order_id)
 
+    # 5. Nothing worked
     return {"payment_status": "unpaid", "status": "pending"}
+
+
+@app.get("/api/checkout-status")
+async def checkout_status_get(order_id: str = "", session_id: str = "", idea_hash: str = ""):
+    """Check payment status and return report_id (GET — backward compat).
+
+    Accepts order_id (LemonSqueezy), session_id (legacy), or idea_hash.
+    """
+    return await _checkout_status_logic(
+        order_id=order_id,
+        session_id=session_id,
+        idea_hash=idea_hash,
+    )
+
+
+class CheckoutStatusRequest(BaseModel):
+    order_id: str = ""
+    session_id: str = ""
+    idea_hash: str = ""
+    idea_text: str = ""
+
+
+@app.post("/api/checkout-status")
+async def checkout_status_post(req: CheckoutStatusRequest):
+    """Check payment status and return report_id (POST — with self-healing).
+
+    If no report exists but idea_text is provided, generates the report
+    on-the-fly so the user always gets their paid report even if the
+    webhook was delayed or never fired.
+    """
+    return await _checkout_status_logic(
+        order_id=req.order_id,
+        session_id=req.session_id,
+        idea_hash=req.idea_hash,
+        idea_text=req.idea_text,
+    )
 
 
 # ---------------------------------------------------------------------------

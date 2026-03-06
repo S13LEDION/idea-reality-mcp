@@ -594,24 +594,31 @@
     hide($('#paywall-cta'));
     hide($('#error-msg'));
     show($('#loading'));
+    // Show "Generating your report..." instead of "Scanning the market..."
+    const loadingText = $('#loading').querySelector('p');
+    if (loadingText) loadingText.textContent = 'Generating your report...';
 
-    // LemonSqueezy webhook generates the report async.
-    // We poll checkout-status using idea_hash (from URL or localStorage).
+    // Collect all available identifiers
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('order_id') || '';
     const ideaHash = params.get('idea_hash') || '';
     let storedHash = '';
+    let storedText = '';
     try { storedHash = localStorage.getItem('ir_idea_hash') || ''; } catch(e) {}
+    try { storedText = localStorage.getItem('ir_idea_text') || ''; } catch(e) {}
     const lookupHash = ideaHash || storedHash;
 
     try {
-      let url = API + '/api/checkout-status?';
-      const qParts = [];
-      if (orderId) qParts.push('order_id=' + encodeURIComponent(orderId));
-      if (lookupHash) qParts.push('idea_hash=' + encodeURIComponent(lookupHash));
-      url += qParts.join('&');
-
-      const res = await fetch(url);
+      // Use POST so we can send idea_text for self-healing generation
+      const res = await fetch(API + '/api/checkout-status', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          order_id: orderId,
+          idea_hash: lookupHash,
+          idea_text: storedText,
+        }),
+      });
       if (!res.ok) throw new Error('Failed to check payment status');
       const data = await res.json();
 
@@ -721,8 +728,8 @@
   // --- Check URL for payment success on page load ---
   (function() {
     const params = new URLSearchParams(window.location.search);
-    // LemonSqueezy redirect: ?paid=1 or ?order_id=xxx
-    if (params.get('paid') || params.get('order_id')) {
+    // LemonSqueezy redirect: ?paid=1 or ?order_id=xxx or ?idea_hash=xxx (from old checkouts)
+    if (params.get('paid') || params.get('order_id') || params.get('idea_hash')) {
       handlePaymentSuccess();
     }
   })();
