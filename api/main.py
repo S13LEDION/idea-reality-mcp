@@ -41,7 +41,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import db as score_db
 import report as report_mod
-import stripe_utils
+import lemon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,6 @@ class CheckoutRequest(BaseModel):
     idea_hash: str
     language: Literal["en", "zh"] = "en"
     success_url: str
-    cancel_url: str
 
 
 # ---------------------------------------------------------------------------
@@ -842,72 +841,70 @@ async def report_preview(req: ReportPreviewRequest, request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Stripe payment endpoints
+# LemonSqueezy payment endpoints
 # ---------------------------------------------------------------------------
 
 @app.post("/api/create-checkout")
 async def create_checkout(req: CheckoutRequest):
-    """Create a Stripe Checkout session for a paid report.
+    """Create a LemonSqueezy checkout for a paid report.
 
     Body: { "idea_text": "...", "idea_hash": "...", "language": "en",
-            "success_url": "https://...", "cancel_url": "https://..." }
-    Returns: { "checkout_url": "https://checkout.stripe.com/..." }
+            "success_url": "https://..." }
+    Returns: { "checkout_url": "https://mnemox-ai.lemonsqueezy.com/checkout/..." }
     """
-    if not stripe_utils._get_stripe_key():
-        raise HTTPException(status_code=503, detail="Stripe is not configured")
+    if not lemon_utils._get_api_key():
+        raise HTTPException(status_code=503, detail="LemonSqueezy is not configured")
 
     if not req.idea_text or not req.idea_text.strip():
         raise HTTPException(status_code=422, detail="idea_text cannot be empty")
 
     try:
-        url = stripe_utils.create_checkout_session(
+        url = await lemon_utils.create_checkout(
             idea_text=req.idea_text.strip(),
             idea_hash=req.idea_hash,
             language=req.language,
             success_url=req.success_url,
-            cancel_url=req.cancel_url,
         )
     except Exception as exc:
-        logger.exception("Stripe checkout session creation failed")
+        logger.exception("LemonSqueezy checkout creation failed")
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return {"checkout_url": url}
 
 
-@app.post("/api/stripe-webhook")
-async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events.
+@app.post("/api/lemon-webhook")
+async def lemon_webhook(request: Request):
+    """Handle LemonSqueezy webhook events.
 
-    On checkout.session.completed:
-      1. Extract idea_text from metadata
+    On order_created:
+      1. Extract idea_text from custom data
       2. Run compute_signal + generate_report
       3. Save report to DB with buyer_email
     """
-    if not stripe_utils._get_webhook_secret():
-        raise HTTPException(status_code=503, detail="Stripe webhook is not configured")
+    if not lemon_utils._get_webhook_secret():
+        raise HTTPException(status_code=503, detail="LemonSqueezy webhook is not configured")
 
     payload = await request.body()
-    sig_header = request.headers.get("stripe-signature", "")
+    signature = request.headers.get("x-signature", "")
 
     try:
-        event = stripe_utils.verify_webhook(payload, sig_header)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        event = lemon_utils.verify_webhook(payload, signature)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        metadata = session.get("metadata", {})
-        idea_text = metadata.get("idea_text", "")
-        idea_hash = metadata.get("idea_hash", "")
-        language = metadata.get("language", "en")
-        buyer_email = session.get("customer_details", {}).get("email")
-        stripe_session_id = session.get("id")
+    event_name = event.get("meta", {}).get("event_name", "")
+
+    if event_name == "order_created":
+        attrs = event.get("data", {}).get("attributes", {})
+        custom_data = event.get("meta", {}).get("custom_data", {})
+        idea_text = custom_data.get("idea_text", "")
+        idea_hash_val = custom_data.get("idea_hash", "")
+        language = custom_data.get("language", "en")
+        buyer_email = attrs.get("user_email", "")
+        order_id = str(event.get("data", {}).get("id", ""))
 
         if idea_text:
             try:
-                # Run the same pipeline as /api/check
                 keywords = extract_keywords(idea_text)
                 github_results, hn_results = await asyncio.gather(
                     search_github_repos(keywords),
@@ -921,73 +918,72 @@ async def stripe_webhook(request: Request):
                     depth="quick",
                 )
 
-                # Generate full report
                 full_report = await report_mod.generate_report(
                     idea_text=idea_text,
                     signal_result=signal_result,
                     language=language,
                 )
 
-                # Merge signal_result + full_report
                 report_data = {**signal_result, "report": full_report}
 
-                # Save report
                 report_id = str(uuid.uuid4())
                 score_db.save_report(
                     report_id=report_id,
                     idea_text=idea_text,
-                    idea_hash=idea_hash or score_db.idea_hash(idea_text),
+                    idea_hash=idea_hash_val or score_db.idea_hash(idea_text),
                     score=signal_result["reality_signal"],
                     report_data=json.dumps(report_data),
                     language=language,
-                    stripe_session_id=stripe_session_id,
+                    stripe_session_id=order_id,  # reuse column for LemonSqueezy order ID
                     buyer_email=buyer_email,
                 )
                 logger.info(
-                    "[STRIPE] Report saved: report_id=%s, email=%s, score=%d",
+                    "[LEMON] Report saved: report_id=%s, email=%s, score=%d",
                     report_id, buyer_email, signal_result["reality_signal"],
                 )
             except Exception:
-                logger.exception("[STRIPE] Failed to generate/save report for session %s", stripe_session_id)
+                logger.exception("[LEMON] Failed to generate/save report for order %s", order_id)
 
     return {"received": True}
 
 
 @app.get("/api/checkout-status")
-async def checkout_status(session_id: str):
-    """Check Stripe checkout session status and return report_id if available.
+async def checkout_status(order_id: str = "", session_id: str = ""):
+    """Check payment status and return report_id.
 
-    If payment is confirmed but the report is missing from DB (e.g. after
-    Render redeploy), the report is regenerated from Stripe session metadata.
+    Accepts order_id (LemonSqueezy) or session_id (legacy Stripe, kept for compat).
+    Looks up the report in DB by order/session ID.
+    If not found but order_id is provided, tries to fetch from LemonSqueezy API
+    and regenerate the report.
     """
-    if not stripe_utils._get_stripe_key():
-        raise HTTPException(status_code=503, detail="Stripe is not configured")
+    lookup_id = order_id or session_id
+    if not lookup_id:
+        raise HTTPException(status_code=422, detail="order_id or session_id required")
 
-    try:
-        status = stripe_utils.get_session_status(session_id)
-    except Exception as exc:
-        logger.exception("Failed to retrieve Stripe session")
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    # Look up in DB first
+    report = score_db.get_report_by_stripe_session(lookup_id)
+    if report:
+        return {
+            "payment_status": "paid",
+            "status": "complete",
+            "report_id": report["report_id"],
+        }
 
-    result = {
-        "payment_status": status["payment_status"],
-        "status": status["status"],
-    }
+    # Not in DB — try LemonSqueezy API to verify + regenerate
+    if order_id and lemon_utils._get_api_key():
+        try:
+            order_attrs = await lemon_utils.get_order(order_id)
+            if order_attrs.get("status") == "paid":
+                # Extract custom data — stored in first_order_item or metadata
+                custom = order_attrs.get("first_order_item", {}).get("custom_data", {})
+                if not custom:
+                    # Try urls.receipt as fallback indicator
+                    custom = {}
+                idea_text = custom.get("idea_text", "")
+                language = custom.get("language", "en")
+                idea_hash_val = custom.get("idea_hash", "")
 
-    if status["payment_status"] == "paid":
-        report = score_db.get_report_by_stripe_session(session_id)
-        if report:
-            result["report_id"] = report["report_id"]
-        else:
-            # Report missing (Render redeploy wiped SQLite) — regenerate
-            metadata = status.get("metadata", {})
-            idea_text = metadata.get("idea_text", "")
-            if idea_text:
-                try:
-                    language = metadata.get("language", "en")
-                    idea_hash_val = metadata.get("idea_hash") or score_db.idea_hash(idea_text)
-                    buyer_email = status.get("buyer_email")
-
+                if idea_text:
                     keywords = extract_keywords(idea_text)
                     github_results, hn_results = await asyncio.gather(
                         search_github_repos(keywords),
@@ -1010,22 +1006,23 @@ async def checkout_status(session_id: str):
                     score_db.save_report(
                         report_id=report_id,
                         idea_text=idea_text,
-                        idea_hash=idea_hash_val,
+                        idea_hash=idea_hash_val or score_db.idea_hash(idea_text),
                         score=signal_result["reality_signal"],
                         report_data=json.dumps(report_data),
                         language=language,
-                        stripe_session_id=session_id,
-                        buyer_email=buyer_email,
+                        stripe_session_id=order_id,
+                        buyer_email=order_attrs.get("user_email", ""),
                     )
-                    result["report_id"] = report_id
-                    logger.info(
-                        "[STRIPE] Report regenerated after DB loss: report_id=%s",
-                        report_id,
-                    )
-                except Exception:
-                    logger.exception("[STRIPE] Failed to regenerate report for session %s", session_id)
+                    logger.info("[LEMON] Report regenerated: report_id=%s", report_id)
+                    return {
+                        "payment_status": "paid",
+                        "status": "complete",
+                        "report_id": report_id,
+                    }
+        except Exception:
+            logger.exception("[LEMON] Failed to verify/regenerate order %s", order_id)
 
-    return result
+    return {"payment_status": "unpaid", "status": "pending"}
 
 
 # ---------------------------------------------------------------------------

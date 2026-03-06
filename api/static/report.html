@@ -554,8 +554,7 @@
           idea_text: currentIdeaText,
           idea_hash: currentIdeaHash,
           language: 'en',
-          success_url: window.location.origin + '/static/report.html?session_id={CHECKOUT_SESSION_ID}',
-          cancel_url: window.location.href,
+          success_url: window.location.origin + '/static/report.html?paid=1',
         }),
       });
 
@@ -582,7 +581,7 @@
   // --- Payment success handling ---
   let currentReportId = '';
 
-  async function handlePaymentSuccess(sid, retries) {
+  async function handlePaymentSuccess(retries) {
     retries = retries || 0;
     hide($('.search-section'));
     hide($('#free-result'));
@@ -591,8 +590,20 @@
     hide($('#error-msg'));
     show($('#loading'));
 
+    // LemonSqueezy webhook generates the report async.
+    // We poll checkout-status which looks up the report by order_id.
+    // Since we don't have the order_id from LS redirect, we check
+    // for the most recent report matching our idea_hash.
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('order_id') || '';
+
     try {
-      const res = await fetch(API + '/api/checkout-status?session_id=' + encodeURIComponent(sid));
+      let url = API + '/api/checkout-status?';
+      if (orderId) {
+        url += 'order_id=' + encodeURIComponent(orderId);
+      }
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to check payment status');
       const data = await res.json();
 
@@ -604,10 +615,9 @@
         renderFullReport(report);
         hide($('#loading'));
         show($('#full-report'));
-      } else if (data.payment_status === 'paid' && retries < 10) {
-        setTimeout(function() { handlePaymentSuccess(sid, retries + 1); }, 2000);
-      } else if (data.payment_status !== 'paid') {
-        throw new Error('Payment was not completed. Please try again.');
+      } else if (retries < 15) {
+        // Webhook may not have fired yet — retry
+        setTimeout(function() { handlePaymentSuccess(retries + 1); }, 2000);
       } else {
         throw new Error('Report is being generated. Please refresh the page in a minute.');
       }
@@ -703,8 +713,10 @@
   // --- Check URL for payment success on page load ---
   (function() {
     const params = new URLSearchParams(window.location.search);
-    const sid = params.get('session_id');
-    if (sid) handlePaymentSuccess(sid);
+    // LemonSqueezy redirect: ?paid=1 or ?order_id=xxx
+    if (params.get('paid') || params.get('order_id')) {
+      handlePaymentSuccess();
+    }
   })();
 
 })();
