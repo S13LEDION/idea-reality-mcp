@@ -626,7 +626,7 @@
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.status === 'paid' && data.report_id) {
+          if (data.status === 'complete' && data.report_id) {
             // Fetch full report
             const rr = await fetch(API + '/report/' + data.report_id);
             if (rr.ok) {
@@ -781,7 +781,7 @@
 
   // --- URL detection: paid redirect or direct report access ---
   const params = new URLSearchParams(window.location.search);
-  if (params.has('paid') || params.has('order_id') || (params.has('idea_hash') && params.get('idea_hash'))) {
+  if (params.has('paid') || params.has('order_id')) {
     handlePaymentSuccess();
   }
 
