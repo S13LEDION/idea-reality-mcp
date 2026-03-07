@@ -211,6 +211,10 @@ def init_db() -> None:
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    try:
+        conn.execute("ALTER TABLE query_log ADD COLUMN country TEXT")
+    except Exception:
+        pass
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reports (
             report_id TEXT PRIMARY KEY,
@@ -365,18 +369,28 @@ def get_subscriber_count() -> int:
 # ---------------------------------------------------------------------------
 
 
-def save_query_log(ip_hash: str, idea_hash: str, depth: str, score: int) -> int:
+def save_query_log(ip_hash: str, idea_hash: str, depth: str, score: int, country: str | None = None) -> int:
     """Insert a query log record and return the row id."""
     conn = _get_conn()
     cur = conn.execute(
-        "INSERT INTO query_log (ip_hash, idea_hash, depth, score) VALUES (?, ?, ?, ?)",
-        (ip_hash, idea_hash, depth, score),
+        "INSERT INTO query_log (ip_hash, idea_hash, depth, score, country) VALUES (?, ?, ?, ?, ?)",
+        (ip_hash, idea_hash, depth, score, country),
     )
     conn.commit()
     _sync_after_write(conn)
     row_id = cur.lastrowid
     conn.close()
     return row_id
+
+
+def get_unique_countries() -> int:
+    """Return number of unique countries in query_log."""
+    conn = _get_conn()
+    count = conn.execute(
+        "SELECT COUNT(DISTINCT country) FROM query_log WHERE country IS NOT NULL AND country != ''"
+    ).fetchone()[0]
+    conn.close()
+    return count
 
 
 def get_query_stats() -> dict:

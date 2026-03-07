@@ -179,6 +179,32 @@ def _check_rate_limit(client_ip: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Accept-Language country extraction
+# ---------------------------------------------------------------------------
+
+_LANG_TO_COUNTRY: dict[str, str] = {
+    "en": "US", "zh": "CN", "ja": "JP", "ko": "KR", "de": "DE",
+    "fr": "FR", "es": "ES", "pt": "BR", "ru": "RU", "it": "IT",
+    "nl": "NL", "sv": "SE", "pl": "PL", "ar": "SA", "hi": "IN",
+    "th": "TH", "vi": "VN", "tr": "TR", "uk": "UA", "cs": "CZ",
+    "ro": "RO", "id": "ID", "ms": "MY",
+}
+
+
+def _extract_country(request: Request) -> str | None:
+    """Best-effort country code from Accept-Language header."""
+    raw = request.headers.get("accept-language", "")
+    if not raw:
+        return None
+    first = raw.split(",")[0].strip().split(";")[0].strip()
+    if not first:
+        return None
+    if "-" in first:
+        return first.split("-", 1)[1].upper()
+    return _LANG_TO_COUNTRY.get(first.lower())
+
+
+# ---------------------------------------------------------------------------
 # LLM keyword extraction (internal, shared by endpoints)
 # ---------------------------------------------------------------------------
 
@@ -353,10 +379,12 @@ async def get_stats():
     """Public stats for the /check hero section."""
     total = score_db.get_total_checks()
     last_check = score_db.get_last_check_time()
+    unique_countries = score_db.get_unique_countries()
     return {
         "total_ideas_scanned": total,
         "sources_count": 5,
         "last_updated": last_check or datetime.now(timezone.utc).isoformat(),
+        "unique_countries": unique_countries,
     }
 
 
@@ -503,11 +531,13 @@ async def check(req: CheckRequest, request: Request):
     try:
         client_ip = request.client.host if request.client else "unknown"
         ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()
+        country = _extract_country(request)
         score_db.save_query_log(
             ip_hash=ip_hash,
             idea_hash=result["idea_hash"],
             depth=req.depth,
             score=result["reality_signal"],
+            country=country,
         )
     except Exception:
         logger.exception("Failed to save query log")
@@ -558,7 +588,7 @@ async def subscribers_count():
     return {"count": count}
 
 
-@app.get("/api/stats")
+@app.get("/api/query-stats")
 async def query_stats():
     """Return query usage stats (total queries, unique IPs, return rate)."""
     try:
